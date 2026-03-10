@@ -19,14 +19,13 @@ export default function HomePage() {
         <div className="relative z-10 container mx-auto px-4 py-24 md:py-36">
           <div className="max-w-3xl mx-auto text-center mb-10">
             <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground mb-4 animate-fade-up">
-              იპოვე შენი ქვეყნის პროფესიონალი უცხოეთში
+              იპოვე პროფესიონალი საქართველოში ან უცხოეთში
             </h1>
             <p
               className="text-lg md:text-xl text-primary-foreground/80 animate-fade-up"
               style={{ animationDelay: "0.1s" }}
             >
-              მოძებნეთ ექიმები, მუშები, იურისტები და ნებისმიერი მომსახურების მიმწოდებელი
-              თქვენს ქალაქში — თქვენს ენაზე.
+              საბუთების მენეჯერი, ადვოკატი, თარჯიმანი და უამრავი სხვა პროფესიონალი ერთ საიტზე
             </p>
           </div>
           <div className="max-w-4xl mx-auto animate-fade-up" style={{ animationDelay: "0.2s" }}>

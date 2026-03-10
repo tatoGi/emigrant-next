@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { COUNTRIES, CITIES_BY_COUNTRY, PROFESSIONS } from "@/lib/data";
+import SearchableSelect from "@/components/SearchableSelect";
 
 interface HeroSearchBarProps {
   initialCountry?: string;
@@ -34,45 +35,59 @@ const HeroSearchBar = ({
     router.push(`/search?${params.toString()}`);
   };
 
+  const handleCountryChange = (val: string) => {
+    setCountry(val);
+    setCity("");
+  };
+
   return (
-    <div className={`bg-card rounded-2xl shadow-card-hover border border-border ${compact ? "p-2" : "p-3"}`}>
+    <div
+      className={`bg-card rounded-2xl shadow-card-hover border border-border ${
+        compact ? "p-2" : "p-3"
+      }`}
+    >
       <div className="flex flex-col md:flex-row gap-2">
+        {/* Country */}
         <div className="flex-1 min-w-0">
-          <label className="text-xs font-medium text-muted-foreground px-3 block mb-1">ქვეყანა</label>
-          <select
+          <SearchableSelect
+            label="ქვეყანა"
             value={country}
-            onChange={(e) => { setCountry(e.target.value); setCity(""); }}
-            className="w-full bg-transparent px-3 pb-2 text-sm text-foreground focus:outline-none font-body"
-          >
-            <option value="">ნებისმიერი ქვეყანა</option>
-            {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
+            onChange={handleCountryChange}
+            options={COUNTRIES}
+            placeholder="ნებისმიერი ქვეყანა"
+            searchPlaceholder="ქვეყნის ძიება..."
+          />
         </div>
+
         <div className="hidden md:block w-px bg-border self-stretch" />
+
+        {/* City */}
         <div className="flex-1 min-w-0">
-          <label className="text-xs font-medium text-muted-foreground px-3 block mb-1">ქალაქი</label>
-          <select
+          <SearchableSelect
+            label="ქალაქი"
             value={city}
-            onChange={(e) => setCity(e.target.value)}
+            onChange={setCity}
+            options={cities}
+            placeholder="ნებისმიერი ქალაქი"
+            searchPlaceholder="ქალაქის ძიება..."
             disabled={!country}
-            className="w-full bg-transparent px-3 pb-2 text-sm text-foreground focus:outline-none font-body disabled:opacity-40"
-          >
-            <option value="">ნებისმიერი ქალაქი</option>
-            {cities.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
+          />
         </div>
+
         <div className="hidden md:block w-px bg-border self-stretch" />
+
+        {/* Profession */}
         <div className="flex-1 min-w-0">
-          <label className="text-xs font-medium text-muted-foreground px-3 block mb-1">პროფესია / სერვისი</label>
-          <select
+          <SearchableSelect
+            label="პროფესია / სერვისი"
             value={profession}
-            onChange={(e) => setProfession(e.target.value)}
-            className="w-full bg-transparent px-3 pb-2 text-sm text-foreground focus:outline-none font-body"
-          >
-            <option value="">ნებისმიერი პროფესია</option>
-            {PROFESSIONS.map((p) => <option key={p} value={p}>{p}</option>)}
-          </select>
+            onChange={setProfession}
+            options={PROFESSIONS}
+            placeholder="ნებისმიერი პროფესია"
+            searchPlaceholder="პროფესიის ძიება..."
+          />
         </div>
+
         <Button
           onClick={handleSearch}
           size={compact ? "default" : "lg"}

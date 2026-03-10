@@ -9,12 +9,7 @@ export function proxy(request: NextRequest) {
   const isProtected = protectedRoutes.some((route) => pathname.startsWith(route));
   if (!isProtected) return NextResponse.next();
 
-  // Auth check — cookie set by Laravel Sanctum (or mock localStorage cookie)
-  const authCookie = request.cookies.get("auth_user");
-  if (!authCookie) {
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
-
+  // Auth check disabled — will be re-enabled when Laravel backend is ready
   return NextResponse.next();
 }
 
