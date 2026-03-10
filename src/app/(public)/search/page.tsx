@@ -1,54 +1,89 @@
 "use client";
 
-import { useState, useMemo, Suspense } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { SlidersHorizontal } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { SlidersHorizontal, Loader2 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import HeroSearchBar from "@/components/HeroSearchBar";
 import ListingCard from "@/components/ListingCard";
-import { MOCK_LISTINGS, NATIONALITIES, LANGUAGES } from "@/lib/data";
+import { NATIONALITIES, LANGUAGES } from "@/lib/data";
+import { fetchListings, type ApiListing } from "@/lib/listingsApi";
+
+const SORT_OPTIONS = [
+  { value: "best",      label: "საუკეთესო შესაბამისობა", sort: "-created_at" },
+  { value: "price_low", label: "ყველაზე დაბალი ფასი",    sort: "price_value" },
+  { value: "recent",    label: "ყველაზე ახალი",           sort: "-created_at" },
+  { value: "views",     label: "ყველაზე პოპულარული",      sort: "-views_count" },
+];
+
+// Map ApiListing → shape ListingCard expects
+function toCardListing(l: ApiListing) {
+  return {
+    id: String(l.id),
+    providerId: String(l.id),
+    providerName: l.provider_name,
+    profession: l.profession,
+    country: l.country,
+    city: l.city,
+    nationality: l.nationality,
+    languages: l.languages ?? [],
+    priceType: l.price_type,
+    priceValue: l.price_value ?? undefined,
+    description: l.description,
+    photo: l.photos?.[0] ?? "/placeholder.jpg",
+    isVip: l.listing_type === "vip",
+    bookingMode: l.booking_mode,
+    createdAt: l.created_at,
+  };
+}
 
 const SearchResultsContent = () => {
   const searchParams = useSearchParams();
-  const country = searchParams.get("country") || "";
-  const city = searchParams.get("city") || "";
-  const profession = searchParams.get("profession") || "";
+  const country    = searchParams.get("country")    ?? "";
+  const city       = searchParams.get("city")       ?? "";
+  const profession = searchParams.get("profession") ?? "";
 
   const [nationality, setNationality] = useState("");
-  const [language, setLanguage] = useState("");
-  const [sortBy, setSortBy] = useState("best");
+  const [language, setLanguage]       = useState("");
+  const [sortBy, setSortBy]           = useState("best");
   const [showFilters, setShowFilters] = useState(false);
+  const [page, setPage]               = useState(1);
 
-  const results = useMemo(() => {
-    let filtered = [...MOCK_LISTINGS];
-    if (country) filtered = filtered.filter(l => l.country === country);
-    if (city) filtered = filtered.filter(l => l.city === city);
-    if (profession) filtered = filtered.filter(l => l.profession === profession);
-    if (nationality) filtered = filtered.filter(l => l.nationality === nationality);
-    if (language) filtered = filtered.filter(l => l.languages.includes(language));
+  const sortParam = SORT_OPTIONS.find((o) => o.value === sortBy)?.sort ?? "-created_at";
 
-    switch (sortBy) {
-      case "rating": filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0)); break;
-      case "price_low": filtered.sort((a, b) => (a.priceValue || 999) - (b.priceValue || 999)); break;
-      case "recent": filtered.sort((a, b) => b.createdAt.localeCompare(a.createdAt)); break;
-    }
-    return filtered;
-  }, [country, city, profession, nationality, language, sortBy]);
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["listings", { country, city, profession, nationality, language, sort: sortParam, page }],
+    queryFn: () =>
+      fetchListings({ country, city, profession, nationality, language, sort: sortParam, page }),
+    staleTime: 30_000,
+  });
+
+  const listings = data?.data ?? [];
+  const meta     = data?.meta;
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <div className="pt-20 pb-6 bg-card border-b border-border">
         <div className="container mx-auto px-4">
-          <HeroSearchBar initialCountry={country} initialCity={city} initialProfession={profession} compact />
+          <HeroSearchBar
+            initialCountry={country}
+            initialCity={city}
+            initialProfession={profession}
+            compact
+          />
         </div>
       </div>
 
       <div className="container mx-auto px-4 py-8">
+        {/* Top bar */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="font-display text-xl font-bold text-foreground">
-            ნაპოვნია {results.length} პროფესიონალი
+            {isLoading
+              ? "იტვირთება..."
+              : `ნაპოვნია ${meta?.total ?? 0} პროფესიონალი`}
           </h2>
           <div className="flex items-center gap-3">
             <button
@@ -59,49 +94,93 @@ const SearchResultsContent = () => {
             </button>
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
+              onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
               className="text-sm bg-card border border-border rounded-lg px-3 py-2 text-foreground font-body"
             >
-              <option value="best">საუკეთესო შესაბამისობა</option>
-              <option value="rating">ყველაზე მაღალი რეიტინგი</option>
-              <option value="price_low">ყველაზე დაბალი ფასი</option>
-              <option value="recent">ყველაზე ახალი</option>
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
             </select>
           </div>
         </div>
 
         <div className="flex gap-8">
-          {/* Filters sidebar */}
+          {/* Sidebar filters */}
           <aside className={`${showFilters ? "block" : "hidden"} md:block w-full md:w-60 shrink-0 space-y-5`}>
             <div>
-              <label className="text-xs font-medium text-muted-foreground block mb-1.5">პროვაიდერის ეროვნება</label>
-              <select value={nationality} onChange={e => setNationality(e.target.value)} className="w-full text-sm bg-card border border-border rounded-lg px-3 py-2 text-foreground font-body">
+              <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                პროვაიდერის ეროვნება
+              </label>
+              <select
+                value={nationality}
+                onChange={(e) => { setNationality(e.target.value); setPage(1); }}
+                className="w-full text-sm bg-card border border-border rounded-lg px-3 py-2 text-foreground font-body"
+              >
                 <option value="">ნებისმიერი</option>
-                {NATIONALITIES.map(n => <option key={n} value={n}>{n}</option>)}
+                {NATIONALITIES.map((n) => <option key={n} value={n}>{n}</option>)}
               </select>
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground block mb-1.5">ენა</label>
-              <select value={language} onChange={e => setLanguage(e.target.value)} className="w-full text-sm bg-card border border-border rounded-lg px-3 py-2 text-foreground font-body">
+              <select
+                value={language}
+                onChange={(e) => { setLanguage(e.target.value); setPage(1); }}
+                className="w-full text-sm bg-card border border-border rounded-lg px-3 py-2 text-foreground font-body"
+              >
                 <option value="">ნებისმიერი</option>
-                {LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}
+                {LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
               </select>
             </div>
           </aside>
 
-          {/* Results grid */}
+          {/* Results */}
           <div className="flex-1">
-            {results.length === 0 ? (
+            {isLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : isError ? (
               <div className="text-center py-20">
-                <p className="text-muted-foreground text-lg">თქვენი კრიტერიუმებით პროფესიონალი ვერ მოიძებნა.</p>
+                <p className="text-muted-foreground text-lg">შეცდომა. სცადეთ ხელახლა.</p>
+              </div>
+            ) : listings.length === 0 ? (
+              <div className="text-center py-20">
+                <p className="text-muted-foreground text-lg">
+                  თქვენი კრიტერიუმებით პროფესიონალი ვერ მოიძებნა.
+                </p>
                 <p className="text-sm text-muted-foreground mt-1">სცადეთ ძიების გაფართოება.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {results.map(listing => (
-                  <ListingCard key={listing.id} listing={listing} />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {listings.map((listing) => (
+                    <ListingCard key={listing.id} listing={toCardListing(listing)} />
+                  ))}
+                </div>
+
+                {/* Pagination */}
+                {meta && meta.last_page > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-10">
+                    <button
+                      disabled={page === 1}
+                      onClick={() => setPage((p) => p - 1)}
+                      className="px-4 py-2 text-sm border border-border rounded-lg disabled:opacity-40 hover:bg-muted transition-colors"
+                    >
+                      ← წინა
+                    </button>
+                    <span className="text-sm text-muted-foreground">
+                      {page} / {meta.last_page}
+                    </span>
+                    <button
+                      disabled={page === meta.last_page}
+                      onClick={() => setPage((p) => p + 1)}
+                      className="px-4 py-2 text-sm border border-border rounded-lg disabled:opacity-40 hover:bg-muted transition-colors"
+                    >
+                      შემდეგი →
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -112,7 +191,13 @@ const SearchResultsContent = () => {
 };
 
 const SearchPage = () => (
-  <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><p className="text-muted-foreground">იტვირთება...</p></div>}>
+  <Suspense
+    fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    }
+  >
     <SearchResultsContent />
   </Suspense>
 );
