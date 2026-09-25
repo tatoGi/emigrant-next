@@ -142,7 +142,12 @@ const Footer = () => {
             </ul>
           </div>
         </div>
-        <div className="border-t border-primary-foreground/20 mt-8 pt-6 text-sm text-center opacity-50">
+        <div className="border-t border-primary-foreground/20 mt-8 pt-6 text-xs text-center opacity-60 space-y-1">
+          <p>ინდ. მეწარმე ხვიჩა გრიგოლია | ს/ნ 39301045648</p>
+          <p>მისამართი: მუხიანი, რევაზ გაბაშვილის ქ. N1</p>
+          <p>ტელეფონი: +995 596 300 775 | ელფოსტა: xvichagrigolia@icloud.com</p>
+        </div>
+        <div className="border-t border-primary-foreground/20 mt-4 pt-4 text-sm text-center opacity-50">
           © 2026 ემიგრანტ.GE - ყველა უფლება დაცულია.
         </div>
       </div>
