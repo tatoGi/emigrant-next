@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
-import { LayoutDashboard, Settings, LogOut, MessageSquare, Upload, X } from "lucide-react";
+import { LayoutDashboard, Settings, LogOut, MessageSquare, Users, Upload, X } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import Header from "@/components/Header";
@@ -17,8 +17,8 @@ import api from "@/lib/api";
 const navItems = [
   { icon: LayoutDashboard, label: "პანელი", path: "/admin/dashboard" },
   { icon: MessageSquare, label: "შეტყობინებები", path: "/admin/messages" },
+  { icon: Users, label: "მომხმარებლები", path: "/admin/users" },
   { icon: Settings, label: "პარამეტრები", path: "/admin/settings" },
-
 ];
 
 interface SiteSettings {
